@@ -1,6 +1,7 @@
 package com.lzh.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
@@ -64,14 +65,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserVo login(UserVo userVo) {
-        // 用户密码 md5加密
-        // TODO 密码不能明文传输
+        // 解码 Base64 编码的密码
+        String reversedPassword = cn.hutool.core.codec.Base64.decodeStr(StrUtil.reverse(userVo.getPassword()));
+
         List<User> userList = userMapper.selectList(new QueryWrapper<User>()
                 .lambda()
-                .eq(User::getUsername, userVo.getUsername())
-                .eq(User::getPassword, userVo.getPassword()));
+                .eq(User::getUsername, userVo.getUsername()));
         if (userList.size() > 0){
             User user = userList.get(0);
+            if (!SecureUtil.md5(reversedPassword).equals(user.getPassword())){
+                throw new MyException(CodeConstant.CODE_401,"用户名或密码不正确");
+            }
             BeanUtils.copyProperties(user, userVo);
             // 用户登录之后，把token也返回
             String token = TokenUtil.getToken(user.getId().toString(), user.getPassword());
@@ -83,7 +87,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             userVo.setMenus(roleMenus);
             return userVo;
         }else {
-            throw new MyException("201","用户名或密码错误");
+            throw new MyException("210","用户名或密码错误");
         }
     }
 
@@ -102,16 +106,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
             save(user);  // 把 copy完之后的用户对象存储到数据库
         } else {
-            throw new MyException(CodeConstant.CODE_201, "用户名已存在");
+            throw new MyException(CodeConstant.CODE_210, "用户名已存在");
         }
         return user;
     }
 
     @Override
     public void sysUserUpdatePassword(PasswordVo passwordVo) {
+        // 解码 Base64 编码的密码
+        String reversedPassword = cn.hutool.core.codec.Base64.decodeStr(StrUtil.reverse(passwordVo.getPassword()));
+        String reversedNewPassword = cn.hutool.core.codec.Base64.decodeStr(StrUtil.reverse(passwordVo.getNewPassword()));
+
+        passwordVo.setPassword(SecureUtil.md5(reversedPassword));// 新增用户默认密码（新增时，未填写密码默认密码为123）
+        passwordVo.setNewPassword(SecureUtil.md5(reversedNewPassword));// 新增用户默认密码（新增时，未填写密码默认密码为123）
+
         int update = userMapper.updatePassword(passwordVo);
         if (update < 1){
-            throw new MyException(CodeConstant.CODE_201,"密码错误");
+            throw new MyException(CodeConstant.CODE_210,"密码错误");
         }
     }
 
@@ -222,7 +233,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             int successCount = userSet.size();// 导入成功的数量
             int failedCount = usernameSet1.size() - userSet.size();// 导入失败的数量
 
-            List<User> userList = users.stream().filter(user -> userSet.contains(user.getUsername())).collect(Collectors.toList());
+            List<User> userList = users.stream()
+                    .filter(user -> userSet.contains(user.getUsername()))
+                    .peek(user -> {
+                        Optional.ofNullable(user.getPassword()).ifPresent(password -> {
+                            String encryptedPassword = SecureUtil.md5(password);
+                            user.setPassword(encryptedPassword); // 更新密码
+                        });
+                    }).collect(Collectors.toList());
             saveBatch(userList);
             String msgSuccess = StrUtil.format("{}条导入成功！",successCount);
             String msgError = StrUtil.format("{}条导入失败！",failedCount);

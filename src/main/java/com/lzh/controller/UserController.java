@@ -1,12 +1,11 @@
 package com.lzh.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lzh.common.Result;
 import com.lzh.constant.CodeConstant;
 import com.lzh.entity.User;
 import com.lzh.service.UserService;
-import com.lzh.utils.TokenUtil;
 import com.lzh.vo.PasswordVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -17,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.lzh.constant.DataConstant.ADMIN_DEFAULT_AVATAR;
 
 /**
  * <p>
@@ -49,7 +50,13 @@ public class UserController {
     public Result sysUserAddOrUpdateAPI_002(@RequestBody User user) {
         if (user.getId() == null && user.getPassword() == null) {
             user.setPassword(SecureUtil.md5("123"));// 新增用户默认密码（新增时，未填写密码默认密码为123）
+            if (StrUtil.isBlank(user.getAvatarUrl())){// 默认头像
+                user.setAvatarUrl(ADMIN_DEFAULT_AVATAR);
+            }
         }
+//        if (StrUtil.isBlank(user.getAvatarUrl())){
+//            user.setAvatarUrl("");//给用户默认头像
+//        }
         // 用户名唯一
         // filter(o -> !Objects.equals(o.getId(), user.getId())) 是为了排除当前这条记录，否则在修改的时候会提示用户已存在，修改失败
         Set<String> collect = userService.list().stream().filter(o -> !Objects.equals(o.getId(), user.getId())).map(User::getUsername).collect(Collectors.toSet());
