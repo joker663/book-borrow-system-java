@@ -1,6 +1,7 @@
 package com.lzh.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.lzh.annotation.SysLog;
 import com.lzh.common.Result;
 import com.lzh.constant.CodeConstant;
 import com.lzh.service.UserService;
@@ -20,12 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/auth")
-@Api(tags = "登录/注册接口")
+@Api(tags = "后台用户登录/注册接口")
 public class LoginController {
 
     @Autowired
     private UserService userService;
 
+    @SysLog(value = "登录",role = "管理员")
     @ApiOperation("登录")
     @PostMapping("/login")
     public Result login(@RequestBody UserVo userVo) {
@@ -38,6 +40,11 @@ public class LoginController {
         return Result.success(userService.login(userVo));
     }
 
+    /**
+     * 管理端不允许注册，只允许管理员添加，下面代码无效
+     * @param userVo
+     * @return
+     */
     @ApiOperation("注册")
     @PostMapping("/register")
     public Result register(@RequestBody UserVo userVo) {
