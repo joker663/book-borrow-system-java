@@ -1,6 +1,7 @@
 package com.lzh.config;
 
-import com.lzh.config.interceptor.JwtInterceptor;
+import com.lzh.interceptor.JwtInterceptor;
+import com.lzh.interceptor.ReaderJwtInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -16,18 +17,36 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtInterceptor())// 取Spring容器中的拦截器对象
-                .addPathPatterns("/**")  // 拦截所有请求，通过判断token是否合法来决定是否需要登录
+        // 用户端拦截器
+        registry.addInterceptor(readerJwtInterceptor())
+                .addPathPatterns("/front/collect/**","/front/myborrow/**")
+                .excludePathPatterns("/front/auth/login",
+                        "/front/auth/register",
+                        "/front/index/**",
+                        "/book/recommend",
+                        "/book/change/recommend");
+
+        // 管理端拦截器
+        registry.addInterceptor(jwtInterceptor())
+                .addPathPatterns("/home/**","/book/**","/borrow/**","/carousel/**",
+                        "/category/**","/user/**","/role/**","/reader/**","/menu/**","/log/**")
                 .excludePathPatterns("/auth/login",
                         "/auth/register",
                         "/**/export/**",
                         "/**/import/**",
-                        "/file/**");
+                        "/file/**",
+                        "/front/index/**",
+                        "/book/recommend",
+                        "/book/change/recommend");
     }
 
     @Bean
     public JwtInterceptor jwtInterceptor() {// 将JwtInterceptor拦截器让Spring管理
         return new JwtInterceptor();
+    }
+    @Bean
+    public ReaderJwtInterceptor readerJwtInterceptor() {// 将ReaderJwtInterceptor拦截器让Spring管理
+        return new ReaderJwtInterceptor();
     }
 
 }
