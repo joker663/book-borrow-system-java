@@ -1,8 +1,8 @@
 package com.lzh.controller;
 
 import com.lzh.common.Result;
-import com.lzh.config.annotation.AuthAccess;
 import com.lzh.entity.Files;
+import com.lzh.oss.AliOSSUtils;
 import com.lzh.service.FileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -27,16 +27,25 @@ public class FileController {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private AliOSSUtils aliOSSUtils;
+
     /**
      * 文件上传接口
      * @param file  前端传递过来的文件
      * @return
      * @throws IOException
      */
-    @ApiOperation("上传文件")
+    @ApiOperation("上传文件（本地）")
     @PostMapping("/upload")
     public String upload(@RequestParam MultipartFile file) throws IOException {
         return fileService.upload(file);
+    }
+
+    @ApiOperation("上传文件（阿里云OSS）")
+    @PostMapping("/upload/oss")
+    public String uploadOss(@RequestParam MultipartFile file) throws IOException {
+        return aliOSSUtils.upload(file);
     }
 
     /**
