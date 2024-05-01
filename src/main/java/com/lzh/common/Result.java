@@ -55,7 +55,7 @@ public class Result {
     }
 
     public static Result error() {
-        return new Result(CodeConstant.CODE_201, StatueEnum.STATUE_FALSE.getStatue(), CodeConstant.MSG_FAILED, null);
+        return new Result(CodeConstant.CODE_210, StatueEnum.STATUE_FALSE.getStatue(), CodeConstant.MSG_FAILED, null);
     }
 
     public static Result error(String code, String msg) {
