@@ -4,7 +4,9 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.lzh.entity.Reader;
 import com.lzh.entity.User;
+import com.lzh.service.ReaderService;
 import com.lzh.service.UserService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -14,6 +16,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @Description: token工具类
@@ -25,13 +28,23 @@ public class TokenUtil {
 
     private static UserService staticUserService;
 
+    private static ReaderService staticReaderService;
+
     @Resource
     private UserService userService;
+
+    @Resource
+    private ReaderService readerService;
 
     // 在SpringBoot项目启动时，从Spring容器中拿到bean对象，并赋给staticUserService静态成员。（因为静态方法不能调用非静态成员变量）
     @PostConstruct
     public void setUserService() {
         staticUserService = userService;
+    }
+
+    @PostConstruct
+    public void setReaderService() {
+        staticReaderService = readerService;
     }
 
     /**
@@ -52,11 +65,30 @@ public class TokenUtil {
      */
     public static User getCurrentUser() {
         try {
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
             String token = request.getHeader("token");
             if (StrUtil.isNotBlank(token)) {
                 String userId = JWT.decode(token).getAudience().get(0);
                 return staticUserService.getById(Integer.valueOf(userId));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * 获取当前登录的读者信息（可以全局获取，后续调用这个方法，即可获取当前登录读者）
+     * @return user对象
+     */
+    public static Reader getCurrentReader() {
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
+            String token = request.getHeader("ReaderToken");
+            if (StrUtil.isNotBlank(token)) {
+                String readerId = JWT.decode(token).getAudience().get(0);
+                return staticReaderService.getById(Integer.valueOf(readerId));
             }
         } catch (Exception e) {
             e.printStackTrace();
