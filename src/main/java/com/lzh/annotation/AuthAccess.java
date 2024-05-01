@@ -1,4 +1,4 @@
-package com.lzh.config.annotation;
+package com.lzh.annotation;
 
 import java.lang.annotation.*;
 
