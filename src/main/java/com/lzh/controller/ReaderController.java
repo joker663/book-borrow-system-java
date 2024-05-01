@@ -8,6 +8,7 @@ import com.lzh.common.Result;
 import com.lzh.constant.CodeConstant;
 import com.lzh.entity.Reader;
 import com.lzh.service.ReaderService;
+import com.lzh.vo.PasswordVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.lzh.constant.DataConstant.READER_DEFAULT_AVATAR;
 
 /**
  * <p>
@@ -59,6 +62,9 @@ public class ReaderController {
     public Result addOrUpdateAPI_002(@RequestBody Reader reader) {
         if (StrUtil.isBlank(Convert.toStr(reader.getId())) && StrUtil.isBlank(reader.getPassword())) {
             reader.setPassword(SecureUtil.md5("123"));// 新增读者默认密码（新增时，未填写密码默认密码为123）
+            if (StrUtil.isBlank(reader.getAvatarUrl())){// 默认头像
+                reader.setAvatarUrl(READER_DEFAULT_AVATAR);
+            }
         }
 
         // username唯一（读者名唯一）
@@ -103,6 +109,13 @@ public class ReaderController {
     @PostMapping("/state/update")
     public Result update(@RequestBody Reader reader){
         readerService.updateById(reader);
+        return Result.success();
+    }
+
+    @ApiOperation("修改密码")
+    @PostMapping("/update/password")
+    public Result sysUserUpdatePassword(@RequestBody PasswordVo passwordVo) {
+        readerService.updatePassword(passwordVo);
         return Result.success();
     }
 

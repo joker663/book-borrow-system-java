@@ -92,4 +92,12 @@ public class Reader implements Serializable {
       @TableField(fill = FieldFill.INSERT_UPDATE)
       private Integer updateBy;
 
+      @Alias("用户可借书数")
+      @ApiModelProperty("用户可借书数")
+      private Integer haveTimes;
+
+      @Alias("用户已借书数")
+      @ApiModelProperty("用户已借书数")
+      private Integer usedTimes;
+
 }
